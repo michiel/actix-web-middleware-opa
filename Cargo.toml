@@ -1,0 +1,18 @@
+[package]
+name = "actix-web-middleware-opa"
+version = "0.1.0"
+authors = ["Michiel Kalkman <michiel@nosuchtype.com>"]
+edition = "2018"
+
+[dependencies]
+log = "0.4"
+futures = "0.1"
+actix = "0.7"
+actix-web = { version = "0.7",  default-features = false }
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
+url = { version="1.7"}
+bytes = '*'
+http = '*'
+base64 = "0.10"
