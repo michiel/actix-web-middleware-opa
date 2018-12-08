@@ -5,6 +5,9 @@ extern crate futures;
 extern crate url;
 extern crate http;
 
+#[cfg(feature="jwt")]
+extern crate jsonwebtoken;
+
 #[macro_use]
 extern crate serde_derive;
 extern crate serde;
@@ -123,6 +126,13 @@ impl<S> OPARequest<S> for HTTPTokenAuthRequest {
                 Ok(s) => {
                     // Header value has the form "Bearer TOKEN"
                     let token = &get_el_from_split(s, " ", 1)?;
+
+                    if cfg!(feature="jwt") {
+                        if !jsonwebtoken::decode_header(token).is_ok() {
+                            return Err("Bad token".to_string());
+                        }
+                    }
+
                     Ok(HTTPTokenAuthRequest {
                         input: HTTPTokenAuthRequestInput {
                             token: token.to_string(),

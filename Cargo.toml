@@ -4,6 +4,14 @@ version = "0.1.0"
 authors = ["Michiel Kalkman <michiel@nosuchtype.com>"]
 edition = "2018"
 
+[lib]
+name = "actix_web_middleware_opa"
+path = "src/lib.rs"
+
+[features]
+default = ["jwt"]
+jwt = ["jsonwebtoken"]
+
 [dependencies]
 log = "0.4"
 futures = "0.1"
@@ -13,6 +21,7 @@ serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
 url = { version="1.7"}
-bytes = '*'
-http = '*'
+bytes = "0.4"
+http = "0.1"
 base64 = "0.10"
+jsonwebtoken = { version = "5.0", optional = true }
