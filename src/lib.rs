@@ -21,6 +21,7 @@ use serde::Serialize;
 
 use std::iter::FromIterator;
 use std::str;
+use std::time::Duration;
 
 use http::header;
 use actix_web::middleware::{Middleware, Started};
@@ -31,6 +32,7 @@ static HEADER_USER_AGENT_KEY: &str = "User-Agent";
 static HEADER_USER_AGENT_VALUE: &str = "PolicyVerifier middleware";
 static MIMETYPE_JSON: &str = "application/json; charset=utf-8";
 static RESPONSE_BODY_SIZE: usize = 1024;
+static DEFAULT_TIMEOUT_MS: u64 = 100;
 
 pub trait OPARequest<S>
 where
@@ -154,14 +156,18 @@ impl<S> OPARequest<S> for HTTPTokenAuthRequest {
 
 pub struct PolicyVerifier<A, B> {
     url: String,
+    duration: Duration,
     request: Option<A>,
     response: Option<B>,
 }
 
-impl<A, B> PolicyVerifier<A, B> {
+impl<A, B> PolicyVerifier<A, B> 
+where
+    A: Serialize {
     pub fn build(url: String) -> Self {
         PolicyVerifier {
             url: url,
+            duration: Duration::from_millis(DEFAULT_TIMEOUT_MS),
             request: None,
             response: None,
         }
@@ -170,6 +176,14 @@ impl<A, B> PolicyVerifier<A, B> {
     pub fn url(mut self, url: String) -> PolicyVerifier<A, B> {
         self.url = url;
         self
+    }
+
+    pub fn build_request(&self, req: &A) -> client::SendRequest {
+        client::ClientRequest::post(&self.url)
+            .header(HEADER_USER_AGENT_KEY, HEADER_USER_AGENT_VALUE)
+            .header(header::CONTENT_TYPE, MIMETYPE_JSON)
+            .json(req).unwrap()
+            .send()
     }
 }
 
@@ -204,11 +218,7 @@ where
     fn start(&self, req: &HttpRequest<S>) -> Result<Started> {
         println!("Get request {:?}", req);
 
-        let response = client::ClientRequest::post(&self.url)
-            .header(HEADER_USER_AGENT_KEY, HEADER_USER_AGENT_VALUE)
-            .header(header::CONTENT_TYPE, MIMETYPE_JSON)
-            .json(A::from_http_request(req).unwrap())?
-            .send();
+        let response = self.build_request(&A::from_http_request(req).unwrap());
 
         Ok(Started::Future(Box::new(
             response
