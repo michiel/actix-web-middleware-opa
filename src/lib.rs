@@ -178,10 +178,16 @@ where
         self
     }
 
+    pub fn timeout(mut self, timeout: Duration) -> PolicyVerifier<A, B> {
+        self.duration = timeout;
+        self
+    }
+
     pub fn build_request(&self, req: &A) -> client::SendRequest {
         client::ClientRequest::post(&self.url)
             .header(HEADER_USER_AGENT_KEY, HEADER_USER_AGENT_VALUE)
             .header(header::CONTENT_TYPE, MIMETYPE_JSON)
+            .timeout(self.duration)
             .json(req).unwrap()
             .send()
     }
