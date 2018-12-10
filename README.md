@@ -10,7 +10,7 @@ applications.
   "input" : {
     "token"  : "123123123",
     "method" : "GET",
-    "path"   : ["order", item", "1"]
+    "path"   : ["order", "item", "1"]
   }
 }
 ```
