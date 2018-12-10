@@ -173,18 +173,6 @@ impl<A, B> PolicyVerifier<A, B> {
     }
 }
 
-/*
-impl<A, B> Default for PolicyVerifier<A, B> {
-    fn default() -> Self {
-        PolicyVerifier {
-            url: None,
-            request: None,
-            response: None,
-        }
-    }
-}
-*/
-
 fn extract_response<B>(bytes: & Bytes) -> Result<Option<HttpResponse>>
 where
     B: OPAResponse + DeserializeOwned,
@@ -240,8 +228,55 @@ where
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    use super::*;
+    use actix_web::test::{self, TestRequest};
+
+    #[derive(Serialize)]
+    struct PolicyRequest {
+        name: String,
     }
+
+    impl<S> OPARequest<S> for PolicyRequest {
+        fn from_http_request(_req: &HttpRequest<S>) -> Result<Self, String> {
+            Ok(PolicyRequest {
+                name: "Sam".to_string()
+            })
+        }
+    }
+
+    #[derive(Deserialize)]
+    struct PolicyDecision {
+        result: OPAResult,
+    }
+
+    #[derive(Deserialize)]
+    struct OPAResult {
+        allow: bool,
+    }
+
+    impl OPAResponse for PolicyDecision {
+        fn allowed(&self) -> bool {
+            self.result.allow
+        }
+    }
+
+    type Verifier = PolicyVerifier<PolicyRequest, PolicyDecision>;
+
+    #[test]
+    fn build_works() {
+        let url = "http://localhost:5151/api/)".to_string();
+        let verifier = Verifier::build(url.clone());
+        assert_eq!(verifier.url, url);
+    }
+
+    #[test]
+    fn url_change_works() {
+        let url_a = "http://localhost:6161/api/)".to_string();
+        let url_b = "http://localhost:6161/api/)".to_string();
+        let verifier = Verifier::build(url_a.to_string().clone());
+        verifier.url(url_b.to_string().clone());
+        // assert_ne!(verifier.url, url_a);
+        // assert_eq!(verifier.url, url_b);
+    }
+
 }
