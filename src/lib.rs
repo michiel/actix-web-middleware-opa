@@ -79,6 +79,8 @@ pub struct HTTPBasicAuthRequestInput {
     method: String,
 }
 
+
+// XXX This does not verify the password
 impl<S> OPARequest<S> for HTTPBasicAuthRequest {
     fn from_http_request(req: &HttpRequest<S>) -> Result<Self, String> {
         let headermap = req.headers();
@@ -208,8 +210,7 @@ where
         Ok(s) => {
             let response: B = serde_json::from_str(&s)?;
             if response.allowed() {
-                println!("200 OK");
-                // Ok(Some(HttpResponse::Ok().finish()))
+                println!("Response");
                 Ok(None)
             } else {
                 println!("403 FORBIDDEN");
@@ -218,7 +219,7 @@ where
         }
         Err(_) => {
             println!("400");
-            Ok(Some(HttpResponse::BadRequest().finish()))
+            Ok(Some(HttpResponse::InternalServerError().finish()))
         }
     }
 }
@@ -231,21 +232,29 @@ where
     fn start(&self, req: &HttpRequest<S>) -> Result<Started> {
         println!("Get request {:?}", req);
 
-        let response = self.build_request(&A::from_http_request(req).unwrap());
+        match &A::from_http_request(req) {
+            Ok(res) => {
+                let response = self.build_request(res);
+                Ok(Started::Future(Box::new(
+                            response
+                            .from_err()
+                            .and_then(|response| {
+                                println!("Response : {:?}", response);
+                                Ok(response.body())
+                            })
+                            .and_then(|body| {
+                                body.limit(RESPONSE_BODY_SIZE)
+                                    .from_err()
+                                    .and_then(|bytes: Bytes| extract_response::<B>(&bytes))
+                            }))))
 
-        Ok(Started::Future(Box::new(
-            response
-                .from_err()
-                .and_then(|response| {
-                    println!("Response : {:?}", response);
-                    Ok(response.body())
-                })
-                .and_then(|body| {
-                    body.limit(RESPONSE_BODY_SIZE)
-                        .from_err()
-                        .and_then(|bytes: Bytes| extract_response::<B>(&bytes))
-                }),
-        )))
+            },
+            Err(err) => {
+                println!("Denied - bad request : {:?}", err);
+                Ok(Started::Response(HttpResponse::Unauthorized().finish()))
+            }
+        }
+
     }
 }
 
@@ -306,9 +315,5 @@ mod tests {
     fn basic() {
         let url_a = "http://localhost:6161/api/)".to_string();
         let verifier = Verifier::build(url_a.to_owned());
-        verifier.url(url_b.to_owned());
-        // assert_ne!(&verifier.url.clone(), &url_a);
-        // assert_eq!(&verifier.url.clone(), &url_b);
     }
-
 }
