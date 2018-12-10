@@ -1,11 +1,15 @@
+//! Open Policy Agent (openpolicyagent/OPA) verification for Actix applications
+//!
+//! OPA middleware could be used with application.
+//!
 extern crate actix_web;
 extern crate base64;
 extern crate bytes;
 extern crate futures;
-extern crate url;
 extern crate http;
+extern crate url;
 
-#[cfg(feature="jwt")]
+#[cfg(feature = "jwt")]
 extern crate jsonwebtoken;
 
 #[macro_use]
@@ -23,10 +27,10 @@ use std::iter::FromIterator;
 use std::str;
 use std::time::Duration;
 
-use http::header;
 use actix_web::middleware::{Middleware, Started};
 use actix_web::{client, HttpRequest, Result};
 use actix_web::{HttpMessage, HttpResponse};
+use http::header;
 
 static HEADER_USER_AGENT_KEY: &str = "User-Agent";
 static HEADER_USER_AGENT_VALUE: &str = "PolicyVerifier middleware";
@@ -58,7 +62,7 @@ fn get_path_list<S>(req: &HttpRequest<S>) -> Vec<String> {
     Vec::from_iter(
         req.path()
             .split('/')
-            .filter(|s| !s.is_empty() )
+            .filter(|s| !s.is_empty())
             .map({ |s| s.to_string() }),
     )
 }
@@ -129,7 +133,7 @@ impl<S> OPARequest<S> for HTTPTokenAuthRequest {
                     // Header value has the form "Bearer TOKEN"
                     let token = &get_el_from_split(s, " ", 1)?;
 
-                    if cfg!(feature="jwt") {
+                    if cfg!(feature = "jwt") {
                         if !jsonwebtoken::decode_header(token).is_ok() {
                             return Err("Bad token".to_string());
                         }
@@ -161,9 +165,10 @@ pub struct PolicyVerifier<A, B> {
     response: Option<B>,
 }
 
-impl<A, B> PolicyVerifier<A, B> 
+impl<A, B> PolicyVerifier<A, B>
 where
-    A: Serialize {
+    A: Serialize,
+{
     pub fn build(url: String) -> Self {
         PolicyVerifier {
             url: url,
@@ -188,12 +193,13 @@ where
             .header(HEADER_USER_AGENT_KEY, HEADER_USER_AGENT_VALUE)
             .header(header::CONTENT_TYPE, MIMETYPE_JSON)
             .timeout(self.duration)
-            .json(req).unwrap()
+            .json(req)
+            .unwrap()
             .send()
     }
 }
 
-fn extract_response<B>(bytes: & Bytes) -> Result<Option<HttpResponse>>
+fn extract_response<B>(bytes: &Bytes) -> Result<Option<HttpResponse>>
 where
     B: OPAResponse + DeserializeOwned,
 {
@@ -203,7 +209,8 @@ where
             let response: B = serde_json::from_str(&s)?;
             if response.allowed() {
                 println!("200 OK");
-                Ok(Some(HttpResponse::Ok().finish()))
+                // Ok(Some(HttpResponse::Ok().finish()))
+                Ok(None)
             } else {
                 println!("403 FORBIDDEN");
                 Ok(Some(HttpResponse::Forbidden().finish()))
@@ -236,7 +243,7 @@ where
                 .and_then(|body| {
                     body.limit(RESPONSE_BODY_SIZE)
                         .from_err()
-                        .and_then(|bytes: Bytes| { extract_response::<B>(&bytes) })
+                        .and_then(|bytes: Bytes| extract_response::<B>(&bytes))
                 }),
         )))
     }
@@ -255,7 +262,7 @@ mod tests {
     impl<S> OPARequest<S> for PolicyRequest {
         fn from_http_request(_req: &HttpRequest<S>) -> Result<Self, String> {
             Ok(PolicyRequest {
-                name: "Sam".to_string()
+                name: "Sam".to_string(),
             })
         }
     }
@@ -289,10 +296,19 @@ mod tests {
     fn url_change_works() {
         let url_a = "http://localhost:6161/api/)".to_string();
         let url_b = "http://localhost:6161/api/)".to_string();
-        let verifier = Verifier::build(url_a.to_string().clone());
-        verifier.url(url_b.to_string().clone());
-        // assert_ne!(verifier.url, url_a);
-        // assert_eq!(verifier.url, url_b);
+        let verifier = Verifier::build(url_a.to_owned());
+        verifier.url(url_b.to_owned());
+        // assert_ne!(&verifier.url.clone(), &url_a);
+        // assert_eq!(&verifier.url.clone(), &url_b);
+    }
+
+    #[test]
+    fn basic() {
+        let url_a = "http://localhost:6161/api/)".to_string();
+        let verifier = Verifier::build(url_a.to_owned());
+        verifier.url(url_b.to_owned());
+        // assert_ne!(&verifier.url.clone(), &url_a);
+        // assert_eq!(&verifier.url.clone(), &url_b);
     }
 
 }
