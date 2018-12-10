@@ -1,7 +1,14 @@
 # actix-web-middleware-opa
 
-Open Policy Agent (openpolicyagent/OPA) middleware integration for actix-web
-applications.
+Open Policy Agent (openpolicyagent/OPA) middleware for actix-web applications.
+
+This middleware performs a policy check against an Open Policy Agent instance for incoming HTTP requests.
+
+Both the policy check request and response are generic
+
+For example, the following request
+
+    curl -XGET -H 'Authorization: Bearer 123123123' http://localhost:8080/order/item/1
 
 ### Example request
 
@@ -41,7 +48,7 @@ applications.
     }
 
     #[derive(Deserialize)]
-    struct PolicyDecision {
+    struct PolicyResponse {
         result: OPAResult,
     }
 
@@ -50,12 +57,12 @@ applications.
         allow: bool,
     }
 
-    impl OPAResponse for PolicyDecision {
+    impl OPAResponse for PolicyResponse {
         fn allowed(&self) -> bool {
             self.result.allow
         }
     }
 
-    type VerifierMiddleware = PolicyVerifier<PolicyRequest, PolicyDecision>;
+    type VerifierMiddleware = PolicyVerifier<PolicyRequest, PolicyResponse>;
 ```
 
