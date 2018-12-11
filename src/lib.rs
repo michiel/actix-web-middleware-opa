@@ -79,7 +79,6 @@ pub struct HTTPBasicAuthRequestInput {
     method: String,
 }
 
-
 // XXX This does not verify the password
 impl<S> OPARequest<S> for HTTPBasicAuthRequest {
     fn from_http_request(req: &HttpRequest<S>) -> Result<Self, String> {
@@ -261,7 +260,9 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use actix_web::test::{self, TestRequest};
+    use actix_web::test::{TestRequest, TestServer};
+
+    const TEST_BODY: &str = r#"{"input":{"user":"testuser"}}"#;
 
     #[derive(Serialize)]
     struct PolicyRequest {
@@ -315,5 +316,16 @@ mod tests {
     fn basic() {
         let url_a = "http://localhost:6161/api/)".to_string();
         let verifier = Verifier::build(url_a.to_owned());
+
+        let mut srv =
+            TestServer::new(|app|
+                                  app.handler(|_| HttpResponse::Ok().body(TEST_BODY)));
+
+        let request = srv.get().header("X-Test", "456456456").finish().unwrap();
+        let repr = format!("{:?}", request);
+        // assert!(repr.contains("PolicyVerifier middleware"));
+
+        let response = srv.execute(request.send()).unwrap();
+        assert!(response.status().is_success());
     }
 }
