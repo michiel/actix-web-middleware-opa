@@ -6,7 +6,7 @@ description = "actix-web middleware for Open Policy Agent (OPA) verification"
 documentation = "https://docs.rs/actix-web-middleware-opa"
 homepage = "https://github.com/michiel/actix-web-middleware-opa"
 readme = "README.md"
-keywords = ["actix-web", "middleware", "opa", "openpolicyagent", "Open Policy Agent"]
+keywords = ["actix-web", "middleware", "opa", "openpolicyagent"]
 categories = []
 license = "MIT"
 
