@@ -1,0 +1,26 @@
+@startuml
+
+skinparam componentStyle uml2
+
+actor User
+
+package "Application" #Pink {
+  package "actix-web App" #White {
+    component "App" as App
+    component "Middleware" as Middleware
+    component "Service" as Service
+  }
+  component "Open Policy Agent" as OPA
+}
+
+User -d-> App #Blue : Request
+App -d-> Middleware #Blue : Request
+Middleware -r-> OPA #Black : Policy check
+OPA -l-> Middleware #Black : Policy decision
+Middleware -u-> App #Red : If denied
+Middleware -u-> Service #Blue : If allowed
+Service -l-> App #Blue : Response
+App -u-> User #Green : Response
+
+@enduml
+
