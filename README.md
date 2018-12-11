@@ -6,6 +6,10 @@ This middleware performs a policy check against an Open Policy Agent instance fo
 
 Both the policy check request and response are generic
 
+## Flow
+
+![Components](/resource/opa-middleware-components.svg?sanitize=true)
+
 For example, the following request
 
     curl -XGET -H 'Authorization: Bearer 123123123' http://localhost:8080/order/item/1
