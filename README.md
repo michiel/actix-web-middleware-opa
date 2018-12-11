@@ -1,5 +1,10 @@
 # actix-web-middleware-opa
 
+[![Build Status](https://travis-ci.org/michiel/actix-web-middleware-opa.svg?branch=master)](https://travis-ci.org/michiel/actix-web-middleware-opa)
+[![Crates.io Status](http://meritbadge.herokuapp.com/actix-web-middleware-opa)](https://crates.io/crates/actix-web-middleware-opa)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/michiel/actix-web-middleware-opa/master/LICENSE)
+[![Documentation](https://docs.rs/actix-web-middleware-opa/badge.svg)](https://docs.rs/actix-web-middleware-opa)
+
 Open Policy Agent (openpolicyagent/OPA) middleware for actix-web applications.
 
 This middleware performs a policy check against an Open Policy Agent instance for incoming HTTP requests.
