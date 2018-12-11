@@ -2,7 +2,13 @@
 name = "actix-web-middleware-opa"
 version = "0.1.0"
 authors = ["Michiel Kalkman <michiel@nosuchtype.com>"]
-edition = "2018"
+description = "actix-web middleware for Open Policy Agent (OPA) verification"
+documentation = "https://docs.rs/actix-web-middleware-opa"
+homepage = "https://github.com/michiel/actix-web-middleware-opa"
+readme = "README.md"
+keywords = ["actix-web", "middleware", "opa", openpolicyagent", "Open Policy Agent"]
+categories = []
+license = "MIT"
 
 [lib]
 name = "actix_web_middleware_opa"
