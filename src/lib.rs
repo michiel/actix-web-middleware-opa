@@ -2,6 +2,8 @@
 //!
 //! OPA middleware could be used with application.
 //!
+//!
+//!
 extern crate actix_web;
 extern crate base64;
 extern crate bytes;
@@ -32,6 +34,47 @@ use actix_web::{client, HttpRequest, Result};
 use actix_web::{HttpMessage, HttpResponse};
 use http::header;
 
+/// `Middleware` for validating access against Open Policy Agent.
+///
+///
+/// ```rust
+/// extern crate actix_web;
+/// extern crate actix_web_middleware_opa;
+/// #[macro_use]
+/// extern crate serde_derive;
+/// extern crate serde;
+///
+/// use actix_web::{http, middleware, App, HttpResponse};
+/// use actix_web_middleware_opa::*;
+///
+/// #[derive(Deserialize)]
+/// struct PolicyDecision {
+///     result: PolicyDecisionResult,
+/// }
+///
+/// #[derive(Deserialize)]
+/// struct PolicyDecisionResult {
+///     allow: bool,
+/// }
+///
+/// impl OPAResponse for PolicyDecision {
+///     fn allowed(&self) -> bool {
+///         self.result.allow
+///     }
+/// }
+///
+/// type Verifier = PolicyVerifier<HTTPTokenAuthRequest, PolicyDecision>;
+///
+/// fn main() {
+///     let app = App::new()
+///         .middleware(Verifier::build("http://localhost:8181/opa/api".to_string()))
+///         .resource("/", |r| {
+///             r.method(http::Method::GET).f(|_| HttpResponse::Ok());
+///         })
+///         .finish();
+/// }
+/// ```
+///
 static HEADER_USER_AGENT_KEY: &str = "User-Agent";
 static HEADER_USER_AGENT_VALUE: &str = "PolicyVerifier middleware";
 static MIMETYPE_JSON: &str = "application/json; charset=utf-8";
