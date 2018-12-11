@@ -4,17 +4,19 @@ Open Policy Agent (openpolicyagent/OPA) middleware for actix-web applications.
 
 This middleware performs a policy check against an Open Policy Agent instance for incoming HTTP requests.
 
-Both the policy check request and response are generic
+Both the policy check request and response are generic.
 
 ## Flow
 
 ![Components](/resource/opa-middleware-components.svg?sanitize=true)
 
-For example, the following request
+## Example
+
+Take the following request :
 
     curl -XGET -H 'Authorization: Bearer 123123123' http://localhost:8080/order/item/1
 
-### Example request
+This will need to be translated to a JSON call to OPA :
 
 ```json
 {
@@ -26,7 +28,23 @@ For example, the following request
 }
 ```
 
-### Example response
+We represent this as two Rust structs which implement `Serialize`,
+
+```rust
+#[derive(Serialize)]
+struct PolicyRequest {
+    input: PolicyRequestInput,
+}
+
+#[derive(Serialize)]
+struct PolicyRequestInput {
+    token: String,
+    method: String,
+    path: Vec<String>,
+}
+```
+
+
 
 ```json
 {
