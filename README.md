@@ -13,7 +13,7 @@ Both the policy check request and response are generic.
 
 ## Flow
 
-![Components](https://raw.github.com/michiel/actix-web-middleware-opa/resource/opa-middleware-components.svg?sanitize=true)
+![Components](https://raw.githubusercontent.com/michiel/actix-web-middleware-opa/master/resource/opa-middleware-components.svg?sanitize=true)
 
 ## Example
 
