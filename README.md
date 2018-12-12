@@ -13,7 +13,7 @@ Both the policy check request and response are generic.
 
 ## Flow
 
-![Components](/resource/opa-middleware-components.svg?sanitize=true)
+![Components](https://raw.github.com/michiel/actix-web-middleware-opa/resource/opa-middleware-components.svg?sanitize=true)
 
 ## Example
 
@@ -49,7 +49,7 @@ struct PolicyRequestInput {
 }
 ```
 
-
+The expected response is a JSON object :
 
 ```json
 {
@@ -59,37 +59,39 @@ struct PolicyRequestInput {
 }
 ```
 
+We represent this as two Rust structs which implement `Deserialize`,
 
 ```rust
-    #[derive(Serialize)]
-    struct PolicyRequest {
-        name: String,
-    }
+#[derive(Deserialize)]
+struct PolicyResponse {
+    input: PolicyResponseResult,
+}
+
+#[derive(Deserialize)]
+struct PolicyResponseResult {
+    allow: bool,
+}
+```
+
+Lastly we have to implement the `OPARequest<S>` trait so that 
+
+```rust
 
     impl<S> OPARequest<S> for PolicyRequest {
         fn from_http_request(_req: &HttpRequest<S>) -> Result<Self, String> {
+            // This needs to be constructured from _req
             Ok(PolicyRequest {
-                name: "Sam".to_string(),
+              input: PolicyRequestInput {
+                token: "123".into(),
+                method: "GET",
+                path: vec!["order", "item", "1"],
+              }
             })
         }
     }
+```
 
-    #[derive(Deserialize)]
-    struct PolicyResponse {
-        result: OPAResult,
-    }
-
-    #[derive(Deserialize)]
-    struct OPAResult {
-        allow: bool,
-    }
-
-    impl OPAResponse for PolicyResponse {
-        fn allowed(&self) -> bool {
-            self.result.allow
-        }
-    }
-
+```rust
     type VerifierMiddleware = PolicyVerifier<PolicyRequest, PolicyResponse>;
 ```
 
