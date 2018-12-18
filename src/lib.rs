@@ -19,6 +19,9 @@ extern crate serde_derive;
 extern crate serde;
 extern crate serde_json;
 
+#[macro_use]
+extern crate log;
+
 use base64::decode;
 use bytes::Bytes;
 use futures::future::Future;
@@ -33,6 +36,12 @@ use actix_web::middleware::{Middleware, Started};
 use actix_web::{client, HttpRequest, Result};
 use actix_web::{HttpMessage, HttpResponse};
 use http::header;
+
+static HEADER_USER_AGENT_KEY: &str = "User-Agent";
+static HEADER_USER_AGENT_VALUE: &str = "PolicyVerifier middleware";
+static MIMETYPE_JSON: &str = "application/json; charset=utf-8";
+static RESPONSE_BODY_SIZE: usize = 1024;
+static DEFAULT_TIMEOUT_MS: u64 = 100;
 
 /// `Middleware` for validating access against Open Policy Agent.
 ///
@@ -75,12 +84,6 @@ use http::header;
 /// }
 /// ```
 ///
-static HEADER_USER_AGENT_KEY: &str = "User-Agent";
-static HEADER_USER_AGENT_VALUE: &str = "PolicyVerifier middleware";
-static MIMETYPE_JSON: &str = "application/json; charset=utf-8";
-static RESPONSE_BODY_SIZE: usize = 1024;
-static DEFAULT_TIMEOUT_MS: u64 = 100;
-
 pub trait OPARequest<S>
 where
     Self: std::marker::Sized,
@@ -90,6 +93,16 @@ where
 
 pub trait OPAResponse {
     fn allowed(&self) -> bool;
+}
+
+#[cfg(feature = "jwt")]
+fn is_valid_token(token: &str) -> bool {
+    jsonwebtoken::decode_header(token).is_ok()
+}
+
+#[cfg(not(feature = "jwt"))]
+fn is_valid_token(_token: &str) -> bool {
+    true
 }
 
 fn get_el_from_split(s: &str, separator: &str, offset: usize) -> Result<String, String> {
@@ -177,10 +190,8 @@ impl<S> OPARequest<S> for HTTPTokenAuthRequest {
                     // Header value has the form "Bearer TOKEN"
                     let token = &get_el_from_split(s, " ", 1)?;
 
-                    if cfg!(feature = "jwt") {
-                        if !jsonwebtoken::decode_header(token).is_ok() {
-                            return Err("Bad token".to_string());
-                        }
+                    if !is_valid_token(token) {
+                        return Err("Bad token".to_string());
                     }
 
                     Ok(HTTPTokenAuthRequest {
@@ -247,20 +258,19 @@ fn extract_response<B>(bytes: &Bytes) -> Result<Option<HttpResponse>>
 where
     B: OPAResponse + DeserializeOwned,
 {
-    // println!("==== BODY ==== {:?}", bytes);
     match str::from_utf8(&bytes) {
         Ok(s) => {
             let response: B = serde_json::from_str(&s)?;
             if response.allowed() {
-                println!("Response");
+                debug!("Decision from OPA: OK");
                 Ok(None)
             } else {
-                println!("403 FORBIDDEN");
+                debug!("Decision from OPA: FORBIDDEN, finalizing response 403");
                 Ok(Some(HttpResponse::Forbidden().finish()))
             }
         }
         Err(_) => {
-            println!("400");
+            warn!("Invalid response from OPA received, returning 500");
             Ok(Some(HttpResponse::InternalServerError().finish()))
         }
     }
@@ -272,7 +282,7 @@ where
     B: OPAResponse + DeserializeOwned,
 {
     fn start(&self, req: &HttpRequest<S>) -> Result<Started> {
-        println!("Get request {:?}", req);
+        debug!("Received incoming HTTP request {:?}", req);
 
         match &A::from_http_request(req) {
             Ok(res) => {
@@ -281,7 +291,7 @@ where
                             response
                             .from_err()
                             .and_then(|response| {
-                                println!("Response : {:?}", response);
+                                debug!("Received response from OPA : {:?}", response);
                                 Ok(response.body())
                             })
                             .and_then(|body| {
@@ -292,7 +302,7 @@ where
 
             },
             Err(err) => {
-                println!("Denied - bad request : {:?}", err);
+                info!("Bad request, finalizing response 401 : {:?}", err);
                 Ok(Started::Response(HttpResponse::Unauthorized().finish()))
             }
         }
