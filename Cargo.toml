@@ -1,6 +1,6 @@
 [package]
 name = "actix-web-middleware-opa"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Michiel Kalkman <michiel@nosuchtype.com>"]
 description = "actix-web middleware for Open Policy Agent (OPA) verification"
 documentation = "https://docs.rs/actix-web-middleware-opa"
