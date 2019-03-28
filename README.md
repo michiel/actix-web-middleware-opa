@@ -73,7 +73,7 @@ struct PolicyResponseResult {
 }
 ```
 
-Lastly we have to implement the `OPARequest<S>` trait so that 
+Lastly we have to implement the `OPARequest<S>` and `OPAResponse` traits so that 
 
 ```rust
 
@@ -87,6 +87,12 @@ Lastly we have to implement the `OPARequest<S>` trait so that
                 path: vec!["order", "item", "1"],
               }
             })
+        }
+    }
+    
+    impl OPAResponse for PolicyResponse {
+        fn allowed(&self) -> bool {
+            self.input.allow
         }
     }
 ```
