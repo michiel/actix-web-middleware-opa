@@ -78,12 +78,12 @@ Lastly we have to implement the `OPARequest<S>` and `OPAResponse` traits so that
 ```rust
 
     impl<S> OPARequest<S> for PolicyRequest {
-        fn from_http_request(_req: &HttpRequest<S>) -> Result<Self, String> {
+        fn from_http_request(req: &HttpRequest<S>) -> Result<Self, String> {
             // This needs to be constructured from _req
             Ok(PolicyRequest {
               input: PolicyRequestInput {
                 token: "123".into(),
-                method: "GET",
+                method: req.method().to_string(),
                 path: vec!["order", "item", "1"],
               }
             })
